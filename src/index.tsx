@@ -1,47 +1,45 @@
-import ReactDOM from 'react-dom/client'
-import React, {useState, useEffect, useRef} from 'react';
-import * as esbuild from 'esbuild-wasm'
-import { unpkgPathPlugin } from './plugins/unpkg-path-plugin';
-import { fetchPlugin } from './plugins/fetch-plugin';
+import ReactDOM from "react-dom/client";
+import React, { useState, useEffect, useRef } from "react";
+import * as esbuild from "esbuild-wasm";
+import { unpkgPathPlugin } from "./plugins/unpkg-path-plugin";
+import { fetchPlugin } from "./plugins/fetch-plugin";
+import CodeEditor from "./components/code-editor";
 
 const App = () => {
-    const ref = useRef<any>()
-    const iframe = useRef<any>()
-    const [input, setInput] = useState('')
+  const ref = useRef<any>();
+  const iframe = useRef<any>();
+  const [input, setInput] = useState("");
 
-    const startService = async () => {
-        ref.current = await esbuild.startService({
-            worker:true,
-            wasmURL:'/esbuild.wasm'
-        }) 
-    }
+  const startService = async () => {
+    ref.current = await esbuild.startService({
+      worker: true,
+      wasmURL: "/esbuild.wasm",
+    });
+  };
 
-    useEffect(() => {
-        startService()
-    }, [])
-    
-    const onClick = async () => {
-        if(!ref.current) return
-        iframe.current.srcdoc = html
+  useEffect(() => {
+    startService();
+  }, []);
 
-        const result = await ref.current.build({
-           entryPoints:['index.js'],
-           bundle:true,
-           write:false,
-           plugins:[
-                    unpkgPathPlugin(),
-                    fetchPlugin(input)
-                ],
-           define:{
-            'process.env.NODE_ENV':'"production"',
-            global:'window'
-           }
-        })
+  const onClick = async () => {
+    if (!ref.current) return;
+    iframe.current.srcdoc = html;
 
-        iframe.current.contentWindow.postMessage(result.outputFiles[0].text, '*')
-    }
+    const result = await ref.current.build({
+      entryPoints: ["index.js"],
+      bundle: true,
+      write: false,
+      plugins: [unpkgPathPlugin(), fetchPlugin(input)],
+      define: {
+        "process.env.NODE_ENV": '"production"',
+        global: "window",
+      },
+    });
 
-    const html = `
+    iframe.current.contentWindow.postMessage(result.outputFiles[0].text, "*");
+  };
+
+  const html = `
         <html>
             <head>
             </head>
@@ -60,20 +58,34 @@ const App = () => {
                 },false)
             </script>
         </html> 
-    `
-    return <div>
-        <div>
-            <textarea value={input} onChange={e => setInput(e.target.value)}></textarea>
-        </div>
-        <div>
-            <button onClick={onClick}>Submit</button>
-        </div>
-        <iframe ref={iframe} sandbox='allow-scripts' srcDoc={html} title='preview'></iframe>
+    `;
+  return (
+    <div>
+      <div>
+        <CodeEditor
+          initialValue="const a = 1;"
+          onChange={(value) => setInput(value)}
+        />
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        ></textarea>
+      </div>
+      <div>
+        <button onClick={onClick}>Submit</button>
+      </div>
+      <iframe
+        ref={iframe}
+        sandbox="allow-scripts"
+        srcDoc={html}
+        title="preview"
+      ></iframe>
     </div>
-}
+  );
+};
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
+  document.getElementById("root") as HTMLElement
 );
 root.render(
   <React.StrictMode>
